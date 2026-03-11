@@ -1,6 +1,6 @@
 {
   "name": "clip-trimmer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Minimal desktop clip trimmer with multi-track audio control.",
   "main": "electron/main.cjs",
   "scripts": {
