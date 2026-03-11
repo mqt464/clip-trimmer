@@ -5,8 +5,8 @@ const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const { Readable } = require("stream");
-const ffmpegPath = require("ffmpeg-static");
-const ffprobePath = require("ffprobe-static").path;
+const ffmpegStaticPath = require("ffmpeg-static");
+const ffprobeStaticPath = require("ffprobe-static").path;
 
 const APP_BACKGROUND = "#0c0e11";
 const MEDIA_SCHEME = "clip-media";
@@ -14,6 +14,19 @@ const OPENABLE_MEDIA_EXTENSIONS = new Set([".mp4", ".mov", ".mkv", ".avi", ".web
 let mainWindow = null;
 let pendingOpenFilePath = null;
 const mediaSessions = new Map();
+
+function resolveBundledBinary(binaryName, developmentPath) {
+  if (!app.isPackaged) {
+    return developmentPath;
+  }
+
+  const extension = process.platform === "win32" ? ".exe" : "";
+  const packagedPath = path.join(process.resourcesPath, "bin", `${binaryName}${extension}`);
+  return fs.existsSync(packagedPath) ? packagedPath : developmentPath;
+}
+
+const ffmpegPath = resolveBundledBinary("ffmpeg", ffmpegStaticPath);
+const ffprobePath = resolveBundledBinary("ffprobe", ffprobeStaticPath);
 
 protocol.registerSchemesAsPrivileged([
   {
