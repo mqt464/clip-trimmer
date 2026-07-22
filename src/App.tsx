@@ -5,7 +5,8 @@ import type {
   FocusEvent as ReactFocusEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import type { AudioTrack, ExportProgress, MediaProject } from "./types";
+import type { ExportProgress, MediaAssetsUpdate, MediaProject } from "./types";
+import { AudioLaneWaveform } from "./components/AudioLaneWaveform";
 import copyIcon from "./assets/icons/copy.svg";
 import cropIcon from "./assets/icons/crop.svg";
 import minusIcon from "./assets/icons/minus.svg";
@@ -23,6 +24,11 @@ type VolumeDragState = {
 type DroppedFile = File & {
   path?: string;
 };
+type AppSettings = {
+  preciseExport: boolean;
+  timelineStartsExpanded: boolean;
+  tooltipsEnabled: boolean;
+};
 
 const MIN_TRIM_GAP = 0.04;
 const COLLAPSED_TIMELINE_HEIGHT = 30;
@@ -34,9 +40,34 @@ const FALLBACK_TIMELINE_HEADER_HEIGHT = 30;
 const FALLBACK_TIMELINE_LANE_HEIGHT = 52;
 const TOOLTIP_OFFSET = 14;
 const TOOLTIP_MARGIN = 8;
+const SETTINGS_STORAGE_KEY = "clip-trimmer-settings";
+const DEFAULT_SETTINGS: AppSettings = {
+  preciseExport: false,
+  timelineStartsExpanded: false,
+  tooltipsEnabled: true,
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function readStoredSettings() {
+  try {
+    const storedSettings = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+
+    if (!storedSettings) {
+      return DEFAULT_SETTINGS;
+    }
+
+    const parsedSettings = JSON.parse(storedSettings) as Partial<AppSettings>;
+    return {
+      preciseExport: parsedSettings.preciseExport === true,
+      timelineStartsExpanded: parsedSettings.timelineStartsExpanded === true,
+      tooltipsEnabled: parsedSettings.tooltipsEnabled !== false,
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
 }
 
 function readCssPixelVar(name: string, fallback: number) {
@@ -281,100 +312,6 @@ function decodePcmWave(arrayBuffer: ArrayBuffer, context: AudioContext) {
   return audioBuffer;
 }
 
-function pickWaveformSamples(track: AudioTrack, targetWidth: number) {
-  const levels = track.waveformLevels?.length
-    ? [...track.waveformLevels].sort((left, right) => left.bucketCount - right.bucketCount)
-    : [{ bucketCount: track.samples.length, samples: track.samples }];
-
-  const minimumBucketCount = Math.max(64, Math.ceil(targetWidth));
-  return (
-    levels.find((level) => level.bucketCount >= minimumBucketCount)?.samples ||
-    levels[levels.length - 1]?.samples ||
-    []
-  );
-}
-
-function AudioLaneWaveform({
-  track,
-  volumeGain,
-  muted,
-}: {
-  track: AudioTrack;
-  volumeGain: number;
-  muted: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const waveformColor = muted ? "rgba(159, 167, 179, 0.68)" : "rgba(81, 226, 132, 0.9)";
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-
-    if (!canvas) {
-      return;
-    }
-
-    const render = () => {
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        return;
-      }
-
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.max(1, Math.floor(width * dpr));
-      canvas.height = Math.max(1, Math.floor(height * dpr));
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      context.clearRect(0, 0, width, height);
-
-      const renderWidth = Math.max(1, Math.floor(width * dpr));
-      const samples = pickWaveformSamples(track, renderWidth);
-
-      if (!samples.length || width <= 0 || height <= 0) {
-        return;
-      }
-
-      const mid = height / 2;
-      const maxAmplitude = height * 0.46;
-      const sampleStep = samples.length / renderWidth;
-      const centerLineY = Math.floor(mid);
-      context.fillStyle = waveformColor;
-      context.fillRect(0, centerLineY, width, 1);
-
-      for (let x = 0; x < renderWidth; x += 1) {
-        const start = Math.floor(x * sampleStep);
-        const end = Math.max(start + 1, Math.floor((x + 1) * sampleStep));
-        let peak = 0;
-
-        for (let index = start; index < end; index += 1) {
-          peak = Math.max(peak, Math.abs(samples[index] ?? 0));
-        }
-
-        const amplitudeScale = muted ? 0.72 : volumeGain;
-        const amplitude = Math.min(maxAmplitude, peak * amplitudeScale * maxAmplitude);
-
-        if (amplitude < 0.6) {
-          continue;
-        }
-
-        context.fillRect(x / dpr, mid - amplitude, 1 / dpr, amplitude * 2);
-      }
-    };
-
-    render();
-    const observer = new ResizeObserver(render);
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [muted, track.samples, track.waveformLevels, volumeGain, waveformColor]);
-
-  return (
-    <div className="timeline-waveform">
-      <canvas aria-hidden="true" className="timeline-waveform-canvas" ref={canvasRef} />
-    </div>
-  );
-}
-
 type AudioPlaybackState = {
   active: boolean;
 };
@@ -393,6 +330,8 @@ export default function App() {
   const timelineHeaderRef = useRef<HTMLDivElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const titleBadgeRef = useRef<HTMLButtonElement | null>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const settingsPanelRef = useRef<HTMLDivElement | null>(null);
   const tooltipFadeTimeoutRef = useRef<number | null>(null);
   const tooltipTimeoutRef = useRef<number | null>(null);
   const tooltipActiveRef = useRef(false);
@@ -435,18 +374,21 @@ export default function App() {
     top: number;
   } | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState(readStoredSettings);
+  const { preciseExport, timelineStartsExpanded, tooltipsEnabled } = appSettings;
 
-  const getTimelineMaxHeight = () => {
+  const getTimelineMaxHeight = (project: MediaProject | null = media) => {
     const viewportMaxHeight = Math.max(
       COLLAPSED_TIMELINE_HEIGHT,
       Math.min(window.innerHeight * 0.58, window.innerHeight - 120),
     );
 
-    if (!media) {
+    if (!project) {
       return viewportMaxHeight;
     }
 
-    const laneCount = 1 + media.audioTracks.length;
+    const laneCount = 1 + project.audioTracks.length;
     const headerHeight =
       timelineHeaderRef.current?.getBoundingClientRect().height ??
       readCssPixelVar("--timeline-header-height", FALLBACK_TIMELINE_HEADER_HEIGHT);
@@ -474,6 +416,10 @@ export default function App() {
     placement: FloatingTooltipState["placement"] = "above",
     motion?: FloatingTooltipState["motion"],
   ) => {
+    if (!tooltipsEnabled) {
+      return;
+    }
+
     clearTooltipTimeout();
     setTooltip({
       label,
@@ -585,6 +531,47 @@ export default function App() {
     [],
   );
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify(appSettings),
+      );
+    } catch {
+      // Settings still apply for the current session when storage is unavailable.
+    }
+
+    if (!appSettings.tooltipsEnabled) {
+      hideTooltip();
+    }
+  }, [appSettings]);
+
+  useEffect(() => {
+    if (!settingsOpen) {
+      return;
+    }
+
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (settingsPanelRef.current?.contains(target) || settingsButtonRef.current?.contains(target)) {
+        return;
+      }
+
+      setSettingsOpen(false);
+    };
+
+    window.addEventListener("pointerdown", closeOnOutsidePointerDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+    };
+  }, [settingsOpen]);
+
   useLayoutEffect(() => {
     if (!renderedTooltip) {
       return;
@@ -665,6 +652,23 @@ export default function App() {
     setCurrentTime(0);
     setTrimStart(0);
     setTrimEnd(nextMedia.duration);
+    setTimelineHeight(timelineStartsExpanded ? getTimelineMaxHeight(nextMedia) : COLLAPSED_TIMELINE_HEIGHT);
+  };
+
+  const applyMediaAssetsUpdate = (update: MediaAssetsUpdate) => {
+    setMedia((currentMedia) => {
+      if (!currentMedia || currentMedia.sessionId !== update.sessionId) {
+        return currentMedia;
+      }
+
+      return {
+        ...currentMedia,
+        thumbnails: update.thumbnails ?? currentMedia.thumbnails,
+        audioTracks: update.audioTrack
+          ? currentMedia.audioTracks.map((track) => (track.id === update.audioTrack?.id ? update.audioTrack : track))
+          : currentMedia.audioTracks,
+      };
+    });
   };
 
   useEffect(() => {
@@ -676,7 +680,7 @@ export default function App() {
     setTrackVolumeDb(
       Object.fromEntries(media.audioTracks.map((track) => [track.id, gainToDb(track.volume)])),
     );
-  }, [media]);
+  }, [media?.sessionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -708,10 +712,28 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  const handleGlobalKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    const target = event.target as HTMLElement | null;
+  useEffect(() => {
+    const unsubscribe = window.videoApp.onMediaAssetsUpdated((update) => {
+      applyMediaAssetsUpdate(update);
+    });
 
-    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.tagName === "BUTTON") {
+    return unsubscribe;
+  }, []);
+
+  const handleGlobalKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const isEditableTarget =
+      target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+    const isButtonTarget = Boolean(target?.closest("button"));
+
+    if (event.code === "Escape" && settingsOpen) {
+      event.preventDefault();
+      setSettingsOpen(false);
+      settingsButtonRef.current?.focus();
+      return;
+    }
+
+    if (isEditableTarget) {
       return;
     }
 
@@ -730,6 +752,10 @@ export default function App() {
     if ((event.ctrlKey || event.metaKey) && event.code === "KeyT" && media) {
       event.preventDefault();
       toggleTimelineCollapsed();
+      return;
+    }
+
+    if (isButtonTarget) {
       return;
     }
 
@@ -785,6 +811,10 @@ export default function App() {
       const decodedEntries: Array<readonly [string, AudioBuffer]> = [];
 
       for (const track of media.audioTracks) {
+        if (!track.audioUrl) {
+          continue;
+        }
+
         try {
           const response = await fetch(track.audioUrl);
 
@@ -804,9 +834,14 @@ export default function App() {
         return 0;
       }
 
+      const previewTrackCount = media.audioTracks.filter((track) => track.audioUrl).length;
       audioBuffersRef.current = Object.fromEntries(decodedEntries);
-      if (decodedEntries.length !== media.audioTracks.length) {
-        console.warn(`Loaded ${decodedEntries.length} of ${media.audioTracks.length} audio tracks.`);
+      if (decodedEntries.length !== previewTrackCount) {
+        console.warn(`Loaded ${decodedEntries.length} of ${previewTrackCount} audio preview tracks.`);
+      }
+
+      if (decodedEntries.length > 0 && videoRef.current && !videoRef.current.paused) {
+        void startAudioPlayback(videoRef.current.currentTime);
       }
 
       return decodedEntries.length;
@@ -834,12 +869,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const sessionId = media?.sessionId;
+
     return () => {
-      if (media?.sessionId) {
-        void window.videoApp.releaseMediaSession(media.sessionId);
+      if (sessionId) {
+        void window.videoApp.releaseMediaSession(sessionId);
       }
     };
-  }, [media]);
+  }, [media?.sessionId]);
 
   useEffect(() => {
     Object.entries(gainNodesRef.current).forEach(([trackId, gain]) => {
@@ -1116,12 +1153,13 @@ export default function App() {
 
     try {
       await window.videoApp.exportClip({
-        sourcePath: media.filePath,
+        sessionId: media.sessionId,
         fileName: media.fileName,
         startTime: trimStart,
         endTime: trimEnd,
+        preciseExport,
         trackVolumes: media.audioTracks.map((track) => ({
-          audioIndex: track.audioIndex,
+          trackId: track.id,
           volume: volumeDbToGain(trackVolumeDb[track.id] ?? gainToDb(track.volume)),
         })),
       });
@@ -1260,7 +1298,9 @@ export default function App() {
     Object.values(sourceNodesRef.current).forEach((source) => {
       try {
         source.stop();
-      } catch {}
+      } catch {
+        // Source nodes can already be stopped during rapid seek/play toggles.
+      }
       source.disconnect();
     });
 
@@ -1300,7 +1340,16 @@ export default function App() {
       source.buffer = buffer;
       source.connect(gain);
       gain.connect(context.destination);
-      source.start(0, clamp(startTime, 0, Math.max(0, buffer.duration - 0.01)));
+      const trackStart = Math.max(0, track.startTime);
+      const trackEnd = trackStart + buffer.duration;
+
+      if (startTime >= trackEnd) {
+        return;
+      }
+
+      const sourceOffset = clamp(startTime - trackStart, 0, Math.max(0, buffer.duration - 0.01));
+      const startDelay = Math.max(0, trackStart - startTime);
+      source.start(context.currentTime + startDelay, sourceOffset);
       sourceNodesRef.current[track.id] = source;
       gainNodesRef.current[track.id] = gain;
       startedTrackCount += 1;
@@ -1317,7 +1366,7 @@ export default function App() {
   }
 
   async function restartAudioPlayback(startTime: number) {
-    if (!audioPlaybackRef.current.active) {
+    if (!audioPlaybackRef.current.active && videoRef.current?.paused) {
       stopAudioPlayback();
       return;
     }
@@ -1395,6 +1444,7 @@ export default function App() {
   const exportEtaLabel =
     exportProgressValue >= 1 ? "Finalizing" : `ETA ${formatEta(exportProgress?.etaSeconds ?? null)}`;
   const exportBusyTooltip = exporting ? "Export in progress" : "Export trimmed clip (Ctrl+E)";
+  const settingsTooltip = settingsOpen ? "Close settings" : "Settings";
   const badgeLabel = media ? media.fileName : loading ? "Opening Clip" : "Open File";
   const badgeIsEmpty = !media && !loading;
   const badgeStateKey = loading ? "loading" : media?.fileName ?? "empty";
@@ -1822,7 +1872,12 @@ export default function App() {
                         className="timeline-lane-content timeline-lane-audio"
                         onPointerDown={(event) => seekFromPointer(event.clientX)}
                       >
-                        <AudioLaneWaveform track={track} volumeGain={dbToGain(trackDb)} muted={trackMuted} />
+                        <AudioLaneWaveform
+                          track={track}
+                          mediaDuration={safeDuration}
+                          volumeGain={dbToGain(trackDb)}
+                          muted={trackMuted}
+                        />
                         <button
                           className={`timeline-volume-handle${volumeDrag?.trackId === track.id ? " is-active" : ""}${trackMuted ? " is-muted" : ""}`}
                           {...bindTooltip(trackTooltip, {
@@ -1886,49 +1941,142 @@ export default function App() {
         </div>
 
         <footer className={`clip-stats-footer${exporting ? " is-exporting" : ""}`}>
-          {errorMessage && !exporting ? (
-            <div aria-live="assertive" className="footer-status footer-status-error" role="status">
-              <span className="footer-status-label">Error</span>
-              <span className="footer-status-message">{errorMessage}</span>
-              <button
-                className="footer-status-dismiss"
-                onClick={() => {
-                  setErrorMessage(null);
-                }}
-                type="button"
-              >
-                Dismiss
-              </button>
-            </div>
-          ) : media ? (
-            exporting ? (
-              <div aria-live="polite" className="export-progress-shell">
-                <div className="export-progress-meta">
-                  <span className="export-progress-label">{exportProgressLabel}</span>
-                  <span className="export-progress-eta">{exportEtaLabel}</span>
-                </div>
-                <div aria-hidden="true" className="export-progress-track">
-                  <div
-                    className="export-progress-fill"
-                    style={{
-                      transform: `scaleX(${exportProgressValue})`,
-                    }}
-                  />
-                </div>
+          <div className="clip-footer-content">
+            {errorMessage && !exporting ? (
+              <div aria-live="assertive" className="footer-status footer-status-error" role="status">
+                <span className="footer-status-label">Error</span>
+                <span className="footer-status-message">{errorMessage}</span>
+                <button
+                  className="footer-status-dismiss"
+                  onClick={() => {
+                    setErrorMessage(null);
+                  }}
+                  type="button"
+                >
+                  Dismiss
+                </button>
               </div>
-            ) : (
-              <div className="clip-stats-grid">
-                {clipStats.map((stat) => (
-                  <div className="clip-stat-card" key={stat.label}>
-                    <span className="clip-stat-label">{stat.label}</span>
-                    <strong className="clip-stat-value">{stat.value}</strong>
+            ) : media ? (
+              exporting ? (
+                <div aria-live="polite" className="export-progress-shell">
+                  <div className="export-progress-meta">
+                    <span className="export-progress-label">{exportProgressLabel}</span>
+                    <span className="export-progress-eta">{exportEtaLabel}</span>
                   </div>
-                ))}
-              </div>
-            )
-          ) : null}
+                  <div aria-hidden="true" className="export-progress-track">
+                    <div
+                      className="export-progress-fill"
+                      style={{
+                        transform: `scaleX(${exportProgressValue})`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="clip-stats-grid">
+                  {clipStats.map((stat) => (
+                    <div className="clip-stat-card" key={stat.label}>
+                      <span className="clip-stat-label">{stat.label}</span>
+                      <strong className="clip-stat-value">{stat.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="clip-footer-idle" />
+            )}
+          </div>
+
+          <div className="footer-settings-area">
+            <button
+              aria-expanded={settingsOpen}
+              aria-haspopup="dialog"
+              className={`footer-settings-button${settingsOpen ? " is-active" : ""}`}
+              {...bindTooltip(settingsTooltip)}
+              onClick={() => {
+                hideTooltip();
+                setSettingsOpen((current) => !current);
+              }}
+              ref={settingsButtonRef}
+              type="button"
+            >
+              <span aria-hidden="true" className="footer-settings-dots">
+                <span />
+                <span />
+                <span />
+              </span>
+              <span className="sr-only">{settingsTooltip}</span>
+            </button>
+          </div>
         </footer>
       </section>
+      {settingsOpen ? (
+        <div
+          aria-label="Settings"
+          className="settings-popover is-open"
+          ref={settingsPanelRef}
+          role="dialog"
+        >
+              <div className="settings-popover-header">Settings</div>
+              <label className="settings-row">
+                <span className="settings-row-copy">
+                  <span className="settings-row-label">Timeline expanded</span>
+                  <span className="settings-row-note">When opening clips</span>
+                </span>
+                <input
+                  checked={timelineStartsExpanded}
+                  className="settings-toggle-input"
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    setAppSettings((current) => ({
+                      ...current,
+                      timelineStartsExpanded: checked,
+                    }));
+                  }}
+                  type="checkbox"
+                />
+                <span aria-hidden="true" className="settings-toggle" />
+              </label>
+              <label className="settings-row">
+                <span className="settings-row-copy">
+                  <span className="settings-row-label">Precise export</span>
+                  <span className="settings-row-note">Accurate trim, higher quality</span>
+                </span>
+                <input
+                  checked={preciseExport}
+                  className="settings-toggle-input"
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    setAppSettings((current) => ({
+                      ...current,
+                      preciseExport: checked,
+                    }));
+                  }}
+                  type="checkbox"
+                />
+                <span aria-hidden="true" className="settings-toggle" />
+              </label>
+              <label className="settings-row">
+                <span className="settings-row-copy">
+                  <span className="settings-row-label">Hints</span>
+              <span className="settings-row-note">Hover labels</span>
+            </span>
+            <input
+                  checked={tooltipsEnabled}
+                  className="settings-toggle-input"
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    setAppSettings((current) => ({
+                      ...current,
+                      tooltipsEnabled: checked,
+                    }));
+                  }}
+                  type="checkbox"
+                />
+            <span aria-hidden="true" className="settings-toggle" />
+          </label>
+        </div>
+      ) : null}
       {renderedTooltip ? (
         <div
           aria-hidden="true"

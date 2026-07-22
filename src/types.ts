@@ -7,6 +7,8 @@ export type AudioTrack = {
   id: string;
   audioIndex: number;
   sourceIndex: number;
+  startTime: number;
+  duration: number;
   audioUrl: string;
   label: string;
   channels: number;
@@ -23,7 +25,7 @@ export type MediaProject = {
   fileUrl: string;
   fileName: string;
   fileSizeBytes: number;
-  sessionId: string | null;
+  sessionId: string;
   duration: number;
   fps: number;
   width: number;
@@ -33,14 +35,21 @@ export type MediaProject = {
 };
 
 export type ExportPayload = {
-  sourcePath: string;
+  sessionId: string;
   fileName: string;
   startTime: number;
   endTime: number;
+  preciseExport?: boolean;
   trackVolumes: Array<{
-    audioIndex: number;
+    trackId: string;
     volume: number;
   }>;
+};
+
+export type MediaAssetsUpdate = {
+  sessionId: string;
+  thumbnails?: string[];
+  audioTrack?: AudioTrack;
 };
 
 export type ExportProgress = {

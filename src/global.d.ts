@@ -1,4 +1,4 @@
-import type { ExportPayload, ExportProgress, MediaProject } from "./types";
+import type { ExportPayload, ExportProgress, MediaAssetsUpdate, MediaProject } from "./types";
 
 declare global {
   interface Window {
@@ -9,6 +9,7 @@ declare global {
         payload: ExportPayload,
       ) => Promise<{ canceled: boolean; outputPath?: string }>;
       releaseMediaSession: (sessionId: string) => Promise<void>;
+      onMediaAssetsUpdated: (callback: (update: MediaAssetsUpdate) => void) => () => void;
       onExportProgress: (callback: (progress: ExportProgress) => void) => () => void;
       minimizeWindow: () => Promise<void>;
       toggleMaximizeWindow: () => Promise<{ isMaximized: boolean }>;

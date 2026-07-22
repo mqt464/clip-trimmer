@@ -1,0 +1,23 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="256"
+  height="256"
+  viewBox="0 0 256 256"
+  fill="none"
+>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#17466f" />
+      <stop offset="0.5" stop-color="#0f2438" />
+      <stop offset="1" stop-color="#0b0e12" />
+    </linearGradient>
+    <filter id="crop-white" color-interpolation-filters="sRGB">
+      <feColorMatrix
+        type="matrix"
+        values="0 0 0 0 0.9608 0 0 0 0 0.9725 0 0 0 0 0.9882 0 0 0 1 0"
+      />
+    </filter>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#background)" />
+  <image href="../src/assets/icons/crop.svg" x="30" y="30" width="196" height="196" filter="url(#crop-white)" />
+</svg>

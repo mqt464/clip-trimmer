@@ -476,21 +476,216 @@ button {
 }
 
 .clip-stats-footer {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  gap: 0;
   min-height: 22px;
-  padding: 2px 8px 3px;
+  padding: 0 0 0 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 100%),
     #05080b;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.014);
-  overflow: hidden;
+  overflow: visible;
 }
 
-.clip-stats-footer.is-exporting {
+.clip-stats-footer.is-exporting .clip-footer-content {
   padding-top: 4px;
   padding-bottom: 5px;
+}
+
+.clip-footer-content {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  padding: 2px 8px 3px 0;
+}
+
+.clip-footer-idle {
+  height: 14px;
+}
+
+.footer-settings-area {
+  z-index: 80;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: stretch;
+}
+
+.footer-settings-button {
+  width: 32px;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  background: transparent;
+  color: rgba(220, 229, 241, 0.7);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.footer-settings-button:hover,
+.footer-settings-button.is-active {
+  background: #15191e;
+  color: rgba(244, 248, 255, 0.92);
+}
+
+.footer-settings-button:focus-visible {
+  outline: 2px solid rgba(126, 189, 255, 0.72);
+  outline-offset: -2px;
+}
+
+.footer-settings-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.footer-settings-dots span {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.settings-popover {
+  position: fixed;
+  right: 8px;
+  bottom: 34px;
+  z-index: 120;
+  width: 196px;
+  padding: 6px 0;
+  border: 1px solid #2a3036;
+  border-radius: 4px;
+  background: #101418;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transform-origin: right bottom;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.settings-popover.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.settings-popover-header {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid #242a30;
+  color: rgba(243, 247, 255, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.settings-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.settings-row:hover {
+  background: #171c21;
+}
+
+.settings-row-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.settings-row-label,
+.settings-row-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-row-label {
+  color: rgba(243, 247, 255, 0.9);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.settings-row-note {
+  color: rgba(154, 169, 187, 0.78);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.settings-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-toggle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 18px;
+  border: 1px solid #3a424a;
+  border-radius: 999px;
+  background: #252b31;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.settings-toggle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #aeb8c2;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.settings-toggle-input:checked + .settings-toggle {
+  border-color: #4da3ff;
+  background: #24435f;
+}
+
+.settings-toggle-input:checked + .settings-toggle::before {
+  background: #d8ebff;
+  transform: translateX(12px);
+}
+
+.settings-toggle-input:focus-visible + .settings-toggle {
+  outline: 2px solid rgba(126, 189, 255, 0.72);
+  outline-offset: 2px;
 }
 
 .clip-stats-grid {
@@ -1162,7 +1357,17 @@ button {
 
   .clip-stats-footer {
     min-height: 20px;
-    padding: 2px 6px 3px;
+    padding-left: 6px;
+  }
+
+  .clip-footer-content {
+    padding-right: 6px;
+  }
+
+  .footer-settings-area,
+  .footer-settings-button {
+    flex-basis: 30px;
+    width: 30px;
   }
 
   .export-progress-meta {

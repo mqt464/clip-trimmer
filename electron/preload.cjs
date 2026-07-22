@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 const openFileListeners = new Set();
 const exportProgressListeners = new Set();
+const mediaAssetListeners = new Set();
 const pendingOpenFiles = [];
 
 ipcRenderer.on("video:open-request", (_event, filePath) => {
@@ -21,11 +22,19 @@ ipcRenderer.on("video:export-progress", (_event, progress) => {
   exportProgressListeners.forEach((listener) => listener(progress));
 });
 
+ipcRenderer.on("video:media-assets-updated", (_event, update) => {
+  mediaAssetListeners.forEach((listener) => listener(update));
+});
+
 contextBridge.exposeInMainWorld("videoApp", {
   openVideo: () => ipcRenderer.invoke("video:open"),
   analyzeVideo: (filePath) => ipcRenderer.invoke("video:analyze", filePath),
   exportClip: (payload) => ipcRenderer.invoke("video:export", payload),
   releaseMediaSession: (sessionId) => ipcRenderer.invoke("video:release-media-session", sessionId),
+  onMediaAssetsUpdated: (callback) => {
+    mediaAssetListeners.add(callback);
+    return () => mediaAssetListeners.delete(callback);
+  },
   onExportProgress: (callback) => {
     exportProgressListeners.add(callback);
     return () => exportProgressListeners.delete(callback);
