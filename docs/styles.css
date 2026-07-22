@@ -42,7 +42,7 @@ a:hover {
 }
 
 .shell {
-  width: min(1040px, calc(100% - 40px));
+  width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
 }
 
@@ -59,7 +59,7 @@ a:hover {
   display: flex;
   min-height: 64px;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 28px;
 }
 
@@ -164,10 +164,47 @@ h1 {
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.4);
 }
 
-.showcase img {
+.carousel {
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+
+.carousel-slide {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.carousel-slide.is-active {
+  opacity: 1;
+}
+
+.carousel-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding: 12px;
+  background: #080808;
+}
+
+.carousel-dot {
+  width: 28px;
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: #3a3a3a;
+  cursor: pointer;
+}
+
+.carousel-dot.is-active {
+  background: #ededed;
 }
 
 .grid {
@@ -273,19 +310,6 @@ h1 {
   margin: 2px 0 0;
   color: var(--muted);
   font-size: 13px;
-}
-
-.thumbs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.thumbs img {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #000000;
 }
 
 .page-head {

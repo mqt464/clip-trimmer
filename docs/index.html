@@ -45,11 +45,29 @@
           <a class="button secondary" href="./versions/">All setups</a>
         </div>
 
-        <figure class="showcase">
-          <img
-            src="./assets/showcase_mediaTimeline.png"
-            alt="Clip Trimmer showing a loaded video with timeline thumbnails and audio lanes."
-          />
+        <figure class="showcase" aria-label="Clip Trimmer screenshots">
+          <div class="carousel" data-carousel>
+            <img
+              class="carousel-slide is-active"
+              src="./assets/showcase_mediaTimeline.png"
+              alt="Clip Trimmer showing a loaded video with timeline thumbnails and audio lanes."
+            />
+            <img
+              class="carousel-slide"
+              src="./assets/showcase_mediaNoTimeline.png"
+              alt="Clip Trimmer focused on video playback."
+            />
+            <img
+              class="carousel-slide"
+              src="./assets/showcase_noMedia.png"
+              alt="Clip Trimmer before opening media."
+            />
+          </div>
+          <div class="carousel-controls" aria-label="Screenshot carousel controls">
+            <button class="carousel-dot is-active" type="button" aria-label="Show timeline screenshot"></button>
+            <button class="carousel-dot" type="button" aria-label="Show playback screenshot"></button>
+            <button class="carousel-dot" type="button" aria-label="Show empty app screenshot"></button>
+          </div>
         </figure>
       </section>
 
@@ -111,17 +129,6 @@
               </a>
             </div>
           </article>
-
-          <div class="thumbs">
-            <img
-              src="./assets/showcase_mediaNoTimeline.png"
-              alt="Clip Trimmer focused on video playback."
-            />
-            <img
-              src="./assets/showcase_noMedia.png"
-              alt="Clip Trimmer before opening media."
-            />
-          </div>
         </aside>
       </section>
     </main>
@@ -132,5 +139,20 @@
         <a href="https://github.com/mqt464/clip-trimmer/releases">Releases on GitHub</a>
       </div>
     </footer>
+    <script>
+      const slides = [...document.querySelectorAll(".carousel-slide")];
+      const dots = [...document.querySelectorAll(".carousel-dot")];
+
+      dots.forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+          slides.forEach((slide, slideIndex) => {
+            slide.classList.toggle("is-active", slideIndex === index);
+          });
+          dots.forEach((item, dotIndex) => {
+            item.classList.toggle("is-active", dotIndex === index);
+          });
+        });
+      });
+    </script>
   </body>
 </html>
