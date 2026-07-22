@@ -71,15 +71,10 @@ a:hover {
 }
 
 .mark {
-  display: grid;
   width: 24px;
   height: 24px;
-  place-items: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
+  display: block;
+  border-radius: 5px;
 }
 
 .nav-links {
