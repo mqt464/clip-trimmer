@@ -59,8 +59,8 @@ a:hover {
   display: flex;
   min-height: 64px;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-start;
+  gap: 28px;
 }
 
 .brand {
@@ -353,7 +353,7 @@ h1 {
 
   .nav-links {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .hero {
