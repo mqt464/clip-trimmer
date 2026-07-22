@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clip Trimmer</title>
+    <meta
+      name="description"
+      content="Download Clip Trimmer for Windows and read the latest release notes."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="shell nav-inner">
+        <a class="brand" href="./" aria-label="Clip Trimmer home">
+          <span class="mark">CT</span>
+          <span>Clip Trimmer</span>
+        </a>
+        <nav class="nav-links" aria-label="Site">
+          <a href="./versions/">Versions</a>
+          <a href="https://github.com/mqt464/clip-trimmer">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="shell hero">
+        <p class="eyebrow">Windows clip trimming with multi-track audio control.</p>
+        <h1>Trim clips without turning it into a production.</h1>
+        <p class="lede">
+          Clip Trimmer is a small desktop app for opening a video, picking the
+          part worth keeping, adjusting embedded audio tracks, and exporting an
+          MP4.
+        </p>
+        <div class="actions">
+          <a
+            class="button"
+            href="https://github.com/mqt464/clip-trimmer/releases/download/v1.1.0/Clip.Trimmer-Setup-1.1.0.exe"
+          >
+            Download v1.1.0
+          </a>
+          <a class="button secondary" href="./versions/">All setups</a>
+        </div>
+
+        <figure class="showcase">
+          <img
+            src="./assets/showcase_mediaTimeline.png"
+            alt="Clip Trimmer showing a loaded video with timeline thumbnails and audio lanes."
+          />
+        </figure>
+      </section>
+
+      <section class="shell grid" aria-label="Release information">
+        <article class="panel">
+          <h2>Latest release notes</h2>
+          <div class="meta">
+            <span class="pill latest">Latest</span>
+            <span class="pill">v1.1.0</span>
+            <span class="pill">22 Jul 2026</span>
+          </div>
+          <ul class="notes">
+            <li>
+              Added asynchronous media asset preparation so clips open before
+              thumbnails and audio waveforms finish processing.
+            </li>
+            <li>
+              Added session-scoped media URLs, path validation, job
+              cancellation, and cleanup for safer file loading.
+            </li>
+            <li>
+              Added a settings popover with persisted timeline expansion,
+              precise export, and tooltip preferences.
+            </li>
+            <li>
+              Added precise export mode, export validation, and a compatibility
+              fallback for difficult FFmpeg outputs.
+            </li>
+            <li>
+              Improved audio track timing, playback offsets, waveform
+              rendering, and muted-track export handling.
+            </li>
+            <li>
+              Added Windows app icon, development app identity handling, linting,
+              type checks, and targeted media utility tests.
+            </li>
+          </ul>
+        </article>
+
+        <aside class="side-stack" aria-label="Download card and screenshots">
+          <article class="release-card">
+            <div class="release-head">
+              <div>
+                <h2>Clip Trimmer 1.1.0</h2>
+                <div class="tag">v1.1.0</div>
+              </div>
+              <span class="pill latest">Release</span>
+            </div>
+            <div class="asset-row">
+              <div>
+                <p class="asset-name">Clip.Trimmer-Setup-1.1.0.exe</p>
+                <p class="asset-size">Windows x64 setup / 849 MB</p>
+              </div>
+              <a
+                class="button subtle"
+                href="https://github.com/mqt464/clip-trimmer/releases/download/v1.1.0/Clip.Trimmer-Setup-1.1.0.exe"
+              >
+                Download
+              </a>
+            </div>
+          </article>
+
+          <div class="thumbs">
+            <img
+              src="./assets/showcase_mediaNoTimeline.png"
+              alt="Clip Trimmer focused on video playback."
+            />
+            <img
+              src="./assets/showcase_noMedia.png"
+              alt="Clip Trimmer before opening media."
+            />
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell">
+        <span>MIT licensed.</span>
+        <a href="https://github.com/mqt464/clip-trimmer/releases">Releases on GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
