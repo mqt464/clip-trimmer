@@ -21,7 +21,7 @@
         </a>
         <nav class="nav-links" aria-label="Site">
           <a href="./">Home</a>
-          <a href="./versions/">Versions</a>
+          <a href="./versions/">Releases</a>
           <a href="https://github.com/mqt464/clip-trimmer">GitHub</a>
         </nav>
       </div>
@@ -29,20 +29,28 @@
 
     <main>
       <section class="shell hero">
-        <p class="eyebrow">Windows desktop app.</p>
-        <h1>Clip Trimmer</h1>
+        <h1 class="hero-title">
+          <img src="./assets/icon.png" alt="" width="82" height="82" />
+          <span>Clip Trimmer</span>
+        </h1>
         <p class="lede">
-          A small app for trimming video clips, adjusting embedded audio tracks,
-          and exporting the result as an MP4.
+          A small windows app made for trimming videos into smaller clips for
+          platforms like discord.
         </p>
         <div class="actions">
           <a
             class="button"
             href="https://github.com/mqt464/clip-trimmer/releases/download/v1.1.0/Clip.Trimmer-Setup-1.1.0.exe"
           >
-            Download setup
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M8 0C3.58 0 0 3.67 0 8.2c0 3.62 2.29 6.69 5.47 7.77.4.08.55-.18.55-.4l-.01-1.4c-2.23.5-2.7-.98-2.7-.98-.36-.95-.89-1.2-.89-1.2-.73-.51.06-.5.06-.5.8.06 1.22.85 1.22.85.72 1.25 1.88.89 2.34.68.07-.53.28-.89.51-1.1-1.78-.21-3.64-.91-3.64-4.05 0-.9.31-1.63.82-2.2-.08-.21-.36-1.04.08-2.17 0 0 .67-.22 2.2.84A7.45 7.45 0 0 1 8 4.07c.68 0 1.36.09 2 .27 1.52-1.06 2.19-.84 2.19-.84.44 1.13.16 1.96.08 2.17.51.57.82 1.3.82 2.2 0 3.15-1.87 3.84-3.65 4.04.29.26.54.76.54 1.53l-.01 2.13c0 .22.15.48.55.4A8.1 8.1 0 0 0 16 8.2C16 3.67 12.42 0 8 0Z"
+              />
+            </svg>
+            Download Latest
           </a>
-          <a class="button secondary" href="./versions/">All setups</a>
+          <a class="button secondary" href="./versions/">Releases</a>
         </div>
 
         <figure class="showcase" aria-label="Clip Trimmer screenshots">
@@ -71,14 +79,26 @@
         </figure>
       </section>
 
-      <section class="shell grid" aria-label="Release information">
-        <article class="panel">
-          <h2>Latest release</h2>
-          <div class="meta">
-            <span class="pill latest">Latest</span>
-            <span class="pill">v1.1.0</span>
-            <span class="pill">22 Jul 2026</span>
+      <section class="shell release-section" aria-label="Release information">
+        <article class="release-panel">
+          <div class="asset-row">
+            <div>
+              <p class="asset-name">Clip.Trimmer-Setup-1.1.0.exe</p>
+              <p class="asset-size">Windows x64 setup / 849 MB</p>
+              <div class="meta">
+                <span class="pill latest">Latest</span>
+                <span class="pill">v1.1.0</span>
+                <span class="pill">22 Jul 2026</span>
+              </div>
+            </div>
+            <a
+              class="button subtle"
+              href="https://github.com/mqt464/clip-trimmer/releases/download/v1.1.0/Clip.Trimmer-Setup-1.1.0.exe"
+            >
+              Download
+            </a>
           </div>
+
           <ul class="notes">
             <li>
               Added asynchronous media asset preparation so clips open before
@@ -106,35 +126,18 @@
             </li>
           </ul>
         </article>
-
-        <aside class="side-stack" aria-label="Download card and screenshots">
-          <article class="release-card">
-            <div class="release-head">
-              <div>
-                <h2>Clip Trimmer 1.1.0</h2>
-                <div class="tag">v1.1.0</div>
-              </div>
-              <span class="pill latest">Release</span>
-            </div>
-            <div class="asset-row">
-              <div>
-                <p class="asset-name">Clip.Trimmer-Setup-1.1.0.exe</p>
-                <p class="asset-size">Windows x64 setup / 849 MB</p>
-              </div>
-              <a
-                class="button subtle"
-                href="https://github.com/mqt464/clip-trimmer/releases/download/v1.1.0/Clip.Trimmer-Setup-1.1.0.exe"
-              >
-                Download
-              </a>
-            </div>
-          </article>
-        </aside>
       </section>
     </main>
 
     <footer class="footer">
       <div class="shell">
+        <a class="maker" href="https://github.com/mqt464" aria-label="Made by mqt464 on GitHub">
+          <img src="https://github.com/mqt464.png?size=96" alt="" width="38" height="38" />
+          <span>
+            <span class="maker-label">Made by</span>
+            <strong>mqt464</strong>
+          </span>
+        </a>
         <span>MIT licensed.</span>
         <a href="https://github.com/mqt464/clip-trimmer/releases">Releases on GitHub</a>
       </div>
@@ -142,17 +145,47 @@
     <script>
       const slides = [...document.querySelectorAll(".carousel-slide")];
       const dots = [...document.querySelectorAll(".carousel-dot")];
+      const slideDelay = 6500;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let activeSlide = 0;
+      let slideTimer;
+
+      function showSlide(index) {
+        activeSlide = index;
+
+        slides.forEach((slide, slideIndex) => {
+          slide.classList.toggle("is-active", slideIndex === activeSlide);
+        });
+
+        dots.forEach((item, dotIndex) => {
+          item.classList.remove("is-active");
+          void item.offsetWidth;
+          item.classList.toggle("is-active", dotIndex === activeSlide);
+        });
+      }
+
+      function scheduleNextSlide() {
+        window.clearTimeout(slideTimer);
+
+        if (reduceMotion.matches || slides.length < 2) {
+          return;
+        }
+
+        slideTimer = window.setTimeout(() => {
+          showSlide((activeSlide + 1) % slides.length);
+          scheduleNextSlide();
+        }, slideDelay);
+      }
 
       dots.forEach((dot, index) => {
         dot.addEventListener("click", () => {
-          slides.forEach((slide, slideIndex) => {
-            slide.classList.toggle("is-active", slideIndex === index);
-          });
-          dots.forEach((item, dotIndex) => {
-            item.classList.toggle("is-active", dotIndex === index);
-          });
+          showSlide(index);
+          scheduleNextSlide();
         });
       });
+
+      showSlide(activeSlide);
+      scheduleNextSlide();
     </script>
   </body>
 </html>
