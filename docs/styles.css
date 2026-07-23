@@ -186,8 +186,10 @@ h1 {
 }
 
 .showcase {
-  width: 100%;
-  margin-top: 44px;
+  width: min(100%, 980px);
+  margin: 44px auto 0;
+  display: grid;
+  justify-items: center;
   border: 0;
   border-radius: 0;
   overflow: hidden;
@@ -197,6 +199,7 @@ h1 {
 
 .carousel {
   position: relative;
+  width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
 }
